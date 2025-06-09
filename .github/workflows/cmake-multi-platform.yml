@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-
+    
     strategy:
       fail-fast: false
       matrix:
@@ -36,7 +36,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
+    
     - name: Set build output directory
       id: strings
       shell: bash
@@ -59,25 +59,25 @@ jobs:
       working-directory: ${{ steps.strings.outputs.build_output_dir }}
       run: ctest --build-config ${{ matrix.build_type }}
 
-    - name: Run Executable
+    - name: Run optimization analysis
       shell: bash
       run: |
-        os="${{ runner.os }}"
-        build_dir="${{ steps.strings.outputs.build_output_dir }}"
-        executable="optimization_test"
-
-        if [ "$os" = "Windows" ]; then
-          executable="optimization_test.exe"
-          executable_path="$build_dir/${{ matrix.build_type }}/$executable"
+        cd "${{ steps.strings.outputs.build_output_dir }}"
+        
+        # Run the custom target for optimization analysis
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          cmake --build . --target test_all_optimizations --config ${{ matrix.build_type }}
         else
-          executable_path="$build_dir/$executable"
+          make test_all_optimizations
         fi
 
-        echo "Checking if executable exists: $executable_path"
-        if [ -f "$executable_path" ]; then
-          echo "Executable found, running it (expected to crash for debug demo)"
-          "$executable_path" || echo "Program crashed as expected (exit code ignored)"
-        else
-          echo "Executable not found: $executable_path"
-          exit 1
+    - name: List build artifacts (debug)
+      shell: bash  
+      run: |
+        echo "=== Build directory contents ==="
+        find "${{ steps.strings.outputs.build_output_dir }}" -name "*.exe" -o -name "optimization_test" 2>/dev/null || true
+        echo "=== All files in build directory ==="
+        ls -la "${{ steps.strings.outputs.build_output_dir }}" || true
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          ls -la "${{ steps.strings.outputs.build_output_dir }}/${{ matrix.build_type }}" || true
         fi
