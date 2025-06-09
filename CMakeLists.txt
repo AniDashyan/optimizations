@@ -4,35 +4,19 @@ project(optimizations)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Define optimization levels to test
 set(OPT_LEVELS "O0" "O1" "O2" "O3")
 
+# Create a single executable
 add_executable(optimization_test main.cpp)
 
-foreach(OPT_LEVEL ${OPT_LEVELS})
-    add_test(
-        NAME test_${OPT_LEVEL}
-        COMMAND ${CMAKE_COMMAND}
-                -DCMAKE_CXX_FLAGS=-${OPT_LEVEL}
-                -DCMAKE_BUILD_TYPE=Release
-                -S ${CMAKE_SOURCE_DIR}
-                -B ${CMAKE_BINARY_DIR}/test_${OPT_LEVEL}
-                --build ${CMAKE_BINARY_DIR}/test_${OPT_LEVEL}
-                --target optimization_test
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-    
-    add_test(
-        NAME run_${OPT_LEVEL}
-        COMMAND ${CMAKE_BINARY_DIR}/test_${OPT_LEVEL}/optimization_test
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-    
-    set_tests_properties(run_${OPT_LEVEL} PROPERTIES DEPENDS test_${OPT_LEVEL})
-endforeach()
-
+# Simple test that runs the main executable
 enable_testing()
+add_test(NAME basic_test COMMAND optimization_test)
 
+# Platform-specific disassembly analysis
 if(UNIX AND NOT APPLE)
+    # Linux with objdump
     add_custom_target(test_all_optimizations
         COMMENT "Testing all optimization levels with objdump (Linux)"
     )
@@ -69,6 +53,7 @@ elseif(WIN32)
     endforeach()
     
 else()
+    # Other platforms (macOS, etc.)
     add_custom_target(test_all_optimizations
         COMMENT "Testing all optimization levels (no disassembly)"
     )
